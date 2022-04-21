@@ -12,7 +12,6 @@ function render(vdom, container) {
     if (vdom) {
         const dom = createDOM(vdom);
         container.appendChild(dom);
-        dom.componentDidMount && dom.componentDidMount()
     }
 }
 /**
@@ -126,7 +125,8 @@ function mountClassCoponent(vdom) {
     // 创建DOM
     let dom = createDOM(renderVdom)
     if (classInstance.componentDidMount) {
-        dom.componentDidMount = classInstance.componentDidMount.bind(classInstance)
+        dom.componentDidMount = classInstance.componentDidMount.bind(classInstance);
+        classInstance.componentDidMount()
     }
     //挂载dom到实例上，为更新做准备
     /*     classInstance.dom = dom */
@@ -188,7 +188,7 @@ function updateChild(currentDOM, oldChildren, newchildren) {
     let maxLength = Math.max(oldChildren.length, newchildren.length)
     for (let i = 0; i < maxLength; i++) {
         if (!oldChildren[i]) {
-            let nextVdom = oldChildren.find((item,index) => index > i && item && findDom(item))
+            let nextVdom = oldChildren.find((item, index) => index > i && item && findDom(item))
             compareVdom(currentDOM, oldChildren[i], newchildren[i], nextVdom && findDom(nextVdom))
         }
         else
