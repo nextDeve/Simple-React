@@ -38,14 +38,14 @@ class Count extends React.Component {
     console.log('componentDidMount');
   }
   shouldComponentUpdate(nextProps, nextState) {
-    console.log('shuoldComponentUpdate');
-    return true
+    console.log('shuoldComponentUpdate', this.state.count);
+    return nextState.count % 2 === 0 ? true : false
   }
   componentWillUpdate() {
-    console.log('componentWillUpdate');
+    console.log('componentWillUpdate', this.state.count);
   }
   componentDidUpdate() {
-    console.log('componentDidUpdate');
+    console.log('componentDidUpdate', this.state.count);
   }
   handelClick = (event) => {
     this.setState({ count: this.state.count + 1 })
