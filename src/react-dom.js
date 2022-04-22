@@ -110,6 +110,13 @@ function mountClassCoponent(vdom) {
     let { type: ClassComponent, props } = vdom;
     // 新建类实例
     let classInstance = new ClassComponent(props);
+    let nextState = classInstance.state
+    let partialState;
+    if (classInstance.constructor.getDerivedStateFromProps) {
+        partialState = classInstance.constructor.getDerivedStateFromProps(props, nextState)
+    }
+    if (partialState) Object.assign(nextState, partialState)
+    classInstance.state = nextState
     //让类组件的vdom的classInstance属性指向这个类组件的实例
     /* vdom.classInstance = classInstance */
     //将要挂载
@@ -139,7 +146,7 @@ function mountClassCoponent(vdom) {
  * @param {*} oldVdom  旧的vdom
  * @param {*} newVdom  新的vdom
  */
-export function compareVdom(parentDom, oldVdom, newVdom, nextDom) {
+export function compareVdom(parentDom, oldVdom, newVdom, nextDom, resolve) {
     // 老的vdom 和新的vdom都是null
     if (!oldVdom && !newVdom) {
         return null;
@@ -172,6 +179,7 @@ export function compareVdom(parentDom, oldVdom, newVdom, nextDom) {
         // 一方面更新自己的属性，另一方面要深度比较子元素
     } else {
         updateComponent(oldVdom, newVdom);
+        if (resolve) resolve();
         return newVdom
     }
 }
