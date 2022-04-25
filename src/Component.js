@@ -1,4 +1,5 @@
 import { compareVdom } from './react-dom';
+import { shallowEqual } from './utils'
 export let updateQueue = {
     isBatchingUpdate: false, //当前是否处于批量更新模式，默认是false
     updaters: [],
@@ -59,9 +60,8 @@ class Updater {
      * @param {*} nextState 新的状态
      */
     shuoldUpdate(classInstance, nextProps, nextState, callBacks) {
-        if (nextProps) {
-            classInstance.props = nextProps
-        }
+        let prevState = { ...classInstance.state }
+        let prevProps = { ...classInstance.props }
         let props = nextProps ? nextProps : classInstance.props
         //不管组件需不需要更新，组件的状态值都会改变
         // 如果有这个方法，并且这个方法返回值为false，则不需要继续向下更新了
@@ -71,12 +71,15 @@ class Updater {
         else if (classInstance.shouldComponentUpdate && !classInstance.shouldComponentUpdate(props, nextState)) {
             shouldUpdate = false;
         }
+        if (nextProps) {
+            classInstance.props = nextProps
+        }
         if (shouldUpdate) {
             if (classInstance.componentWillUpdate) {
                 classInstance.componentWillUpdate()
             }
             classInstance.state = nextState
-            classInstance.froceUpdate();
+            classInstance.froceUpdate(true, prevProps, prevState);
         } else {
             classInstance.state = nextState
         }
@@ -87,13 +90,19 @@ class Updater {
         let prevState = classInstance.state;
         let partialState;
         if (classInstance.constructor.getDerivedStateFromProps) {
-            partialState = classInstance.constructor.getDerivedStateFromProps(nextProps, prevState)
+            partialState = classInstance.constructor.getDerivedStateFromProps.call(classInstance, nextProps, prevState)
         }
         if (partialState) Object.assign(nextState, partialState)
+        return [classInstance.props, prevState]
+    }
+    getSnapshotBeforeUpdate(classInstance, prevProps, prevState) {
+        if (classInstance.getSnapshotBeforeUpdate) {
+            classInstance.getSnapshotBeforeUpdate(prevProps, prevState)
+        }
     }
 }
 
-export default class component {
+export default class Component {
     static isReactComponent = true
     constructor(props) {
         this.props = props
@@ -103,11 +112,23 @@ export default class component {
     setState(partialState, callBack) {
         this.updater.addState(partialState, callBack)
     }
-    froceUpdate() {
+    froceUpdate(inner, prevProps, prevState) {
+        // prevProps, prevState 这里的prevProps, prevState一定是newProps或者setState调用froceUpdate传进来的
+        //在事件中调用froceUpdate不传递任何参数
+        if (!inner) {
+            [prevProps, prevState] = this.updater.getDerivedStateFromProps(this, this.props, this.state)
+        }
+
+        if (this.constructor.contextType) {
+            this.context = this.constructor.contextType._currentValue
+        }
         let newVdom = this.render() //重新调用render方法，获取新的vdom
+        this.updater.getSnapshotBeforeUpdate(this, prevProps, prevState)
         // 深度比较新旧vdom
+
         let promise = new Promise((resolve) => {
-            this.renderVdom = compareVdom(this.renderVdom.dom.parentNode, this.renderVdom, newVdom, undefined, resolve)
+            let parentNode = findDom(this.renderVdom)
+            this.renderVdom = compareVdom(parentNode, this.renderVdom, newVdom, undefined, resolve)
         })
         /* updateClassComponent(this, newVdom) */
         promise.then(() => {
@@ -132,3 +153,19 @@ export default class component {
     oldDom.parentNode.replaceChild(newDom, oldDom);
     classInstance.dom = newDom;
 } */
+
+function findDom(vdom) {
+    let { type } = vdom;
+    let dom;
+    if (typeof type === 'function') {
+        dom = findDom(vdom.renderVdom)
+    } else {
+        dom = vdom.dom
+    }
+    return dom
+}
+export class PureComponent extends Component {
+    shouldComponentUpdate(nextProps, nextState) {
+        return !shallowEqual(this.props, nextProps) || !shallowEqual(this.state, nextState)
+    }
+};
