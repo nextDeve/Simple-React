@@ -116,6 +116,35 @@ export function useReducer(reducer, initialState) {
     return [hookSate[hookIndex++], dispatch]
 }
 /**
+ * 
+ * @param {*} callBack 当前渲染任务完成下一个宏任务
+ * @param {*} deps 依赖数组
+ */
+export function useEffect(callBack, deps) {
+    //往后调用
+    if (hookSate[hookIndex]) {
+        // 获取上一次的销毁函数和状态
+        let [lastDestroy, lastDeps] = hookSate[hookIndex];
+        //比较状态
+        let same = deps.every((item, index) => item === lastDeps[index]);
+        if (same) {
+            //一样的话不需要做什么
+            hookIndex++;
+        } else {
+            // 不一样，执行回调，记录销毁函数
+            if (typeof lastDestroy === 'function') lastDestroy();
+            let newDestroy = callBack()
+            hookSate[hookIndex++] = [newDestroy, deps]
+        }
+        //第一次进来时，只需要保存effect的销毁函数和依赖
+    } else {
+        setTimeout(() => {
+            let destroy = callBack()
+            hookSate[hookIndex++] = [destroy, deps]
+        })
+    }
+}
+/**
  * 把vdom转换成DOM
  * @param {*} vdom 
  */

@@ -11,7 +11,8 @@ import {
     useState,
     useMemo,
     useCallback,
-    useReducer
+    useReducer,
+    useEffect
 } from './react-dom'
 /**
  * 
@@ -131,6 +132,7 @@ const React = {
     useMemo,
     useCallback,
     useReducer,
-    useContext
+    useContext,
+    useEffect
 }
 export default React
