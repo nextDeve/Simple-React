@@ -1,8 +1,6 @@
 import React from './react';
 import ReactDOM from './react-dom';
 
-let CounterContext = React.createContext()
-
 function reducer(state, action) {
     switch (action.type) {
         case 'INCREMENT':
@@ -15,7 +13,7 @@ function reducer(state, action) {
 }
 
 function Counter() {
-    const { state, dispatch } = React.useContext(CounterContext)
+    const [state, dispatch] = React.useReducer(reducer, { number: 0 })
     const handelChange = (type) => {
         switch (type) {
             case 'INCREMENT':
@@ -41,12 +39,4 @@ function Counter() {
 
     )
 }
-function APP() {
-    const [state, dispatch] = React.useReducer(reducer, { number: 0 })
-    return (
-        <CounterContext.Provider value={{ state, dispatch }}>
-            <Counter></Counter>
-        </CounterContext.Provider>
-    )
-}
-ReactDOM.render(<APP></APP>, document.getElementById('root'));
+ReactDOM.render(<Counter></Counter>, document.getElementById('root'));

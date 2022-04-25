@@ -1,7 +1,18 @@
 import Component, { PureComponent } from './Component'
 import { wrapToVdom, shallowEqual } from './utils'
-import { REACT_FORWARD_REF_TYPE, REACT_FRAGMENT, REACT_CONTEXT, REACT_PROVIDER, REACT_MEMO } from './constants'
-import { useState } from './react-dom'
+import {
+    REACT_FORWARD_REF_TYPE,
+    REACT_FRAGMENT,
+    REACT_CONTEXT,
+    REACT_PROVIDER,
+    REACT_MEMO
+} from './constants'
+import {
+    useState,
+    useMemo,
+    useCallback,
+    useReducer
+} from './react-dom'
 /**
  * 
  * @param {*} type  元素类型
@@ -72,7 +83,10 @@ function cloneElement(oldElement, newProps, children) {
         props
     }
 }
-
+/**
+ * 
+ * @returns 
+ */
 function createContext() {
     let context = {
         $$typeof: REACT_CONTEXT
@@ -87,6 +101,12 @@ function createContext() {
     }
     return context
 }
+/**
+ * 
+ * @param {*} type 
+ * @param {*} compare 
+ * @returns 
+ */
 function memo(type, compare = shallowEqual) {
     return {
         $$typeof: REACT_MEMO,
@@ -94,7 +114,9 @@ function memo(type, compare = shallowEqual) {
         compare
     }
 }
-
+function useContext(context) {
+    return context._currentValue
+}
 const React = {
     createElement,
     Component,
@@ -105,6 +127,10 @@ const React = {
     cloneElement,
     PureComponent,
     memo,
-    useState
+    useState,
+    useMemo,
+    useCallback,
+    useReducer,
+    useContext
 }
 export default React

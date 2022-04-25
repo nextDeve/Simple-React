@@ -10,9 +10,10 @@ import {
     REACT_MEMO
 } from './constants'
 
+
+let scheduleUpdate;
 let hookSate = [];//存放所有状态
 let hookIndex = 0;//当前执行的hook索引
-let scheduleUpdate;
 
 function render(vdom, container) {
     mount(vdom, container)
@@ -36,17 +37,84 @@ function mount(vdom, container) {
     }
 }
 
-
-export function useState(initialState) {
-    hookSate[hookIndex] = hookSate[hookIndex] || initialState;
+/**
+ * useState
+ * @param {*} initialState 
+ * @returns 
+ */
+/* export function useState(initialState) {
+    hookSate[hookIndex] = hookSate[hookIndex] !== undefined ? hookSate[hookIndex] : initialState;
     let currentIndex = hookIndex;
     function setState(newState) {
         hookSate[currentIndex] = newState;
         scheduleUpdate();
     }
     return [hookSate[hookIndex++], setState]
+} */
+export function useState(initialState) {
+    return useReducer(null, initialState)
 }
-
+/**
+ *useMemo
+ * @param {*} factory 
+ * @param {*} deps 
+ * @returns 
+ */
+export function useMemo(factory, deps) {
+    if (hookSate[hookIndex]) {
+        let [lastMemo, lastDeps] = hookSate[hookIndex];
+        let same = deps.every((item, index) => item === lastDeps[index])
+        if (same) {
+            hookIndex++;
+            return lastMemo;
+        } else {
+            let newMemo = factory();
+            hookSate[hookIndex++] = [newMemo, deps];
+            return newMemo;
+        }
+    } else {
+        let newMemo = factory();
+        hookSate[hookIndex++] = [newMemo, deps];
+        return newMemo;
+    }
+}
+/**
+ * useCallback
+ * @param {*} callback 
+ * @param {*} deps 
+ * @returns 
+ */
+export function useCallback(callback, deps) {
+    if (hookSate[hookIndex]) {
+        let [lastCallback, lastDeps] = hookSate[hookIndex];
+        let same = deps.every((item, index) => item === lastDeps[index])
+        if (same) {
+            hookIndex++;
+            return lastCallback;
+        } else {
+            hookSate[hookIndex++] = [callback, deps];
+            return callback;
+        }
+    } else {
+        hookSate[hookIndex++] = [callback, deps];
+        return callback;
+    }
+}
+/**
+ * 
+ * @param {*} reducer 
+ * @param {*} initialState 
+ * @returns 
+ */
+export function useReducer(reducer, initialState) {
+    hookSate[hookIndex] = hookSate[hookIndex] !== undefined ? hookSate[hookIndex] : initialState;
+    let currentIndex = hookIndex
+    function dispatch(action) {
+        hookSate[currentIndex] = reducer ? reducer(hookSate[currentIndex], action) : action
+        scheduleUpdate();
+    }
+    return [hookSate[hookIndex++], dispatch]
+}
 /**
  * 把vdom转换成DOM
  * @param {*} vdom 
@@ -393,6 +461,11 @@ function updateElement(oldVdom, newVdom) {
         }
     }
 }
+/**
+ * 
+ * @param {*} oldVdom 
+ * @param {*} newVdom 
+ */
 function updateProviderComponent(oldVdom, newVdom) {
     let parentDom = findDom(oldVdom).parentNode;
     let { type, props } = newVdom;
@@ -401,6 +474,11 @@ function updateProviderComponent(oldVdom, newVdom) {
     newVdom.renderVdom = renderVdom
     compareVdom(parentDom, oldVdom.renderVdom, renderVdom)
 }
+/**
+ * 
+ * @param {*} oldVdom 
+ * @param {*} newVdom 
+ */
 function updateContextComponent(oldVdom, newVdom) {
     let parentDom = findDom(oldVdom).parentNode;
     let { type, props } = newVdom;
@@ -408,6 +486,10 @@ function updateContextComponent(oldVdom, newVdom) {
     newVdom.renderVdom = renderVdom
     compareVdom(parentDom, oldVdom.renderVdom, renderVdom)
 }
+/**
+ * 
+ * @param {*} newVdom 
+ */
 function updateFunctionComponent(newVdom) {
     let parentDom = findDom(newVdom).parentNode;
     let { renderVdom } = newVdom
@@ -430,6 +512,11 @@ function updateClassComponent(newVdom) {
     //触发组件更新，并将新的属性传回
     classInstance.updater.emitUpdate(newVdom.props)
 }
+/**
+ * 
+ * @param {*} oldVdom 
+ * @param {*} newVdom 
+ */
 function updateMemoComponent(oldVdom, newVdom) {
     let { props, type } = oldVdom
     let nextProps = newVdom.props
