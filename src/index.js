@@ -1,29 +1,44 @@
 import React from './react';
 import ReactDOM from './react-dom';
 
-function Child(props, ref) {
-    let childRef = React.useRef();
-    //函数组件中自定义暴露给父组件的ref对象
-    React.useImperativeHandle(ref, () => ({
-        focus() {
-            childRef.current.focus()
-        }
-    }))
-    return <input ref={childRef}></input>
+
+//逻辑复用，自定义hook，复用的是逻辑。而不是状态
+function useConter(initialState) {
+    let [number, setNumber] = React.useState(initialState);
+    const handelClick = () => {
+        setNumber(number + 1);
+    }
+    return [number, handelClick]
 }
 
-let ForwardChild = React.forwardRef(Child)
+function Conter1(props, ref) {
+    let [number, setNumber] = useConter(0);
+    //函数组件中自定义暴露给父组件的ref对象
 
-function Parent() {
-    let [number, setNumber] = React.useState(0);
-    let inputRef = React.useRef();
-    const getFocus = () => {
-        inputRef.current.focus();
-    }
     return (
         <div>
-            <ForwardChild ref={inputRef}></ForwardChild>
-            <button onClick={getFocus}>获得焦点</button>
+            <h1>{number}</h1>
+            <button onClick={setNumber}>+</button>
+        </div>
+    )
+}
+
+function Conter2(props, ref) {
+    let [number, setNumber] = useConter(0);
+    //函数组件中自定义暴露给父组件的ref对象
+    return (
+        <div>
+            <h1>{number}</h1>
+            <button onClick={setNumber}>+</button>
+        </div>
+    )
+}
+
+function Parent() {
+    return (
+        <div>
+            <Conter1></Conter1>
+            <Conter2 ></Conter2>
         </div>
     )
 }
