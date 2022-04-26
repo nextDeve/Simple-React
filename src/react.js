@@ -12,7 +12,9 @@ import {
     useMemo,
     useCallback,
     useReducer,
-    useEffect
+    useEffect,
+    useLayoutEffect,
+    useRef
 } from './react-dom'
 /**
  * 
@@ -115,8 +117,21 @@ function memo(type, compare = shallowEqual) {
         compare
     }
 }
+/**
+ * 
+ * @param {*} context 
+ * @returns 
+ */
 function useContext(context) {
     return context._currentValue
+}
+/**
+ * 
+ * @param {*} ref 
+ * @param {*} fatory 
+ */
+function useImperativeHandle(ref, fatory) {
+    ref.current = fatory()
 }
 const React = {
     createElement,
@@ -133,6 +148,9 @@ const React = {
     useCallback,
     useReducer,
     useContext,
-    useEffect
+    useEffect,
+    useLayoutEffect,
+    useImperativeHandle,
+    useRef
 }
 export default React
